@@ -19,42 +19,71 @@ db = SQLAlchemy(metadata=metadata)
 
 class Planet(db.Model, SerializerMixin):
     __tablename__ = 'planets'
+    
+    serialize_rules = ('-missions',)
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
     distance_from_earth = db.Column(db.Integer)
     nearest_star = db.Column(db.String)
 
-    # Add relationship
-
-    # Add serialization rules
-
+    missions = db.relationship('Mission', back_populates='planet', cascade="all, delete-orphan")
+    scientists = association_proxy('missions', 'scientist')
 
 class Scientist(db.Model, SerializerMixin):
     __tablename__ = 'scientists'
+    
+    serialize_rules = ('-mission.scientist',)
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
-    field_of_study = db.Column(db.String)
+    name = db.Column(db.String, nullable=False)
+    field_of_study = db.Column(db.String, nullable=False)
 
-    # Add relationship
-
-    # Add serialization rules
-
-    # Add validation
-
-
+    missions = db.relationship('Mission', back_populates='scientist', cascade="all, delete-orphan")
+    planets = association_proxy('missions', 'planet')
+    
+    @validates('name')
+    def validates_name(self, key, new_name):
+        if new_name:
+            return new_name
+        raise ValueError("Scientist must have a name")
+    
+    @validates('field_of_study')
+    def validates_field_of_study(self, key, new_field_of_study):
+        if new_field_of_study:
+            return new_field_of_study
+        raise ValueError("Scientist must have a field of study")
+        
+    
 class Mission(db.Model, SerializerMixin):
     __tablename__ = 'missions'
-
+    
+    serialize_rules = ('-planet.missions', '-scientist.missions')
+    
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
+    name = db.Column(db.String, nullable=False)
+    scientist_id = db.Column(db.Integer, db.ForeignKey('scientists.id'))
+    planet_id = db.Column(db.Integer, db.ForeignKey('planets.id'))
 
-    # Add relationships
+    scientist = db.relationship('Scientist', back_populates='missions')
+    planet = db.relationship('Planet', back_populates='missions')
+   
+    @validates('name')
+    def validates_name(self, key, new_name):
+        if new_name:
+            return new_name
+        raise ValueError("Missions must have a name")
+    
+    @validates('scientist_id')
+    def validates_scientist_id(self, key, new_scientist_id):
+        if new_scientist_id:
+            return new_scientist_id
+        raise ValueError("Missions must have a scientist id")
+        
+    @validates('planet_id')
+    def validates_planet_id(self, key, new_planet_id):
+        if new_planet_id:
+            return new_planet_id
+        raise ValueError("Missions must have a planet id")
+        
 
-    # Add serialization rules
-
-    # Add validation
-
-
-# add any models you may need.
