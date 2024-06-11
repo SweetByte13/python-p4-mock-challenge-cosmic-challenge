@@ -84,16 +84,17 @@ class ScientistById(Resource):
         except ValueError as v_error:
             # return make_response({"errors": [str(v_error)]})
             return make_response({"errors": ["validation errors"]}, 400)
-    
+   
     def delete(self, id):
         scientist = db.session.get(Scientist, id)
         if not scientist:
             return make_response({"error": "Scientist not found"}, 404)
+        
         db.session.delete(scientist)
         db.session.commit()
         return make_response({}, 204)
-        
-api.add_resource(ScientistById,'/scientists/<int:id>')
+
+api.add_resource(ScientistById, '/scientists/<int:id>')
 
 
 # @app.route('/scientists/<int:id>', methods=['GET', 'PATCH', 'DELETE'])
@@ -142,7 +143,7 @@ class Missions(Resource):
     def post(self):
         params = request.json
         try:
-            mission = Mission(name=params['name'],scientist_id=params['scientist_id'],planet_id=params['planet_id'])
+            mission = Mission(name=params.get('name'),scientist_id=params.get('scientist_id'),planet_id=params.get('planet_id'))
             db.session.add(mission)
             db.session.commit()
             return make_response(mission.to_dict(), 201)
